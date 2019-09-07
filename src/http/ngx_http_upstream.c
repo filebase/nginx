@@ -2740,6 +2740,12 @@ ngx_http_upstream_process_headers(ngx_http_request_t *r, ngx_http_upstream_t *u)
                 i = 0;
             }
 
+            if (ngx_hash_find(&u->conf->hide_headers_hash, h[i].hash,
+                            h[i].lowcase_key, h[i].key.len))
+            {
+                continue;
+            }
+
             hh = ngx_hash_find(&umcf->headers_in_hash, h[i].hash,
                                h[i].lowcase_key, h[i].key.len);
 
@@ -2749,6 +2755,13 @@ ngx_http_upstream_process_headers(ngx_http_request_t *r, ngx_http_upstream_t *u)
                                               NGX_HTTP_INTERNAL_SERVER_ERROR);
                     return NGX_DONE;
                 }
+                continue;
+            }
+
+            if (ngx_http_upstream_copy_header_line(r, &h[i], 0) != NGX_OK) {
+                ngx_http_upstream_finalize_request(r, u,
+                                                NGX_HTTP_INTERNAL_SERVER_ERROR);
+                return NGX_DONE;
             }
         }
 
